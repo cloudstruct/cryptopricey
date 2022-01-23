@@ -1,10 +1,14 @@
 package main
 
 import (
+	"os"
 	"errors"
 	"fmt"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
 	"strings"
 	"time"
 )
@@ -83,13 +87,69 @@ func handleSlashCommand(command slack.SlashCommand, client *slack.Client) (inter
 	// We need to switch depending on the command
 	switch command.Command {
 	case "/cryptoprice":
-		// This was a hello command, so pass it along to the proper function
 		return nil, handleCryptopriceyCommand(command, client)
 	case "/cryptoprice-config":
 		return handleCryptopriceyConfig(command, client)
+	case "/cryptoprice-tickers":
+		return nil, handleCryptopriceyTickers(command, client)
+	}
+	return nil, nil
+}
+
+type DataFile struct {
+        Tickers string  `yaml:"tickers"`
+        Time    string  `yaml:"time"`
+        Frequency       string  `yaml:"frequency"`
+}
+
+// handleCryptopriceyTickers will take care of /cryptoprice submissions
+func handleCryptopriceyTickers(command slack.SlashCommand, client *slack.Client) error {
+	data := make(map[string]DataFile)
+
+	dataDir := os.Getenv("DATA_DIR")
+	configFile := dataDir + "/conf.yaml"
+	log.Printf("********** Loading file: " + configFile)
+
+
+	if len(command.Text) < 1 {
+		log.Printf("*********** Empty Ticker Symbol")
+		return nil
 	}
 
-	return nil, nil
+	yamlFile, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.Printf("*********** YAML config does not exist, continuing.")
+		} else {
+			log.Printf("yamlFile.Get err   #%v ", err)
+			panic(err)
+		}
+	}
+
+	if err := yaml.Unmarshal(yamlFile, &data); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("%+v", &data)
+	log.Printf("Length: %s", len(data))
+
+	// The Input is found in the text field so
+	// Create the attachment and assigned based on the message
+//	attachment := slack.Attachment{}
+
+//	adaPrice := getCryptoPrice(command.Text)
+
+	// Greet the user
+//	attachment.Text = fmt.Sprintf("The spot price of %s is '%s'\n", command.Text, adaPrice)
+//	attachment.Color = "#4af030"
+//
+//	// Send the message to the channel
+//	// The Channel is available in the command.ChannelID
+//	_, _, err := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
+//	if err != nil {
+//		return fmt.Errorf("********* failed to post message: %w", err)
+//	}
+	return nil
 }
 
 // handleCryptopriceyConfig will allow the user to configure Cryptopricey via Slack UI
@@ -100,7 +160,7 @@ func handleCryptopriceyConfig(command slack.SlashCommand, client *slack.Client) 
 	// Allow user to select the time for announcements
 	timePicker := slack.NewTimePickerBlockElement("timeselection")
 
-	// Create the Accessory that will be included in the Block and add the radiobox to it
+	// Create the Accessories that will be included in the Block
 	timeAccessory := slack.NewAccessory(timePicker)
 
 	headerText := slack.NewTextBlockObject(slack.MarkdownType, "### CryptoPricey Config ###", false, false)
@@ -154,7 +214,34 @@ func handleCryptopriceyCommand(command slack.SlashCommand, client *slack.Client)
 	// The Channel is available in the command.ChannelID
 	_, _, err := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
 	if err != nil {
-		return fmt.Errorf("failed to post message: %w", err)
+		return fmt.Errorf("********* failed to post message: %w", err)
 	}
+	return nil
+}
+
+func handleInteractionEvent(interaction slack.InteractionCallback, client *slack.Client) error {
+	// This is where we would handle the interaction
+	// Switch depending on the Type
+	log.Printf("********** The response was of type: %s\n", interaction.Type)
+	switch interaction.Type {
+	case slack.InteractionTypeBlockActions:
+		// This is a block action, so we need to handle it
+		for _, action := range interaction.ActionCallback.BlockActions {
+			if action.ActionID == "timeselection" {
+				log.Printf("********* ActionID: %s", action.ActionID)
+				log.Printf("********* Selected Time: %s", action.SelectedTime)
+				log.Printf("********* ChannelID: %s", interaction.Container.ChannelID)
+				//				log.Printf("********* Selected option: %s", action.TimePickerElement.InitialTime)
+			}
+			if action.ActionID == "frequency" {
+				log.Printf("********* ActionID: %s", action.ActionID)
+				log.Printf("********* Selected option: %s", action.SelectedOption.Value)
+			}
+		}
+
+	default:
+
+	}
+
 	return nil
 }

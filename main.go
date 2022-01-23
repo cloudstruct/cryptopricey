@@ -48,6 +48,8 @@ func getCryptoPrice(ticker string) string {
 	return r.Data.Amount
 }
 
+// Global for data config directory
+
 func main() {
 
 	// Load Env variables from .dot file
@@ -55,6 +57,7 @@ func main() {
 
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	appToken := os.Getenv("SLACK_APP_TOKEN")
+
 	// Create a new client to slack by giving token
 	// Set debug to true while developing
 	// Also add a ApplicationToken option to the client
@@ -117,6 +120,20 @@ func main() {
 					// Dont forget to acknowledge the request
 					socketClient.Ack(*event.Request, payload)
 
+				case socketmode.EventTypeInteractive:
+					interaction, ok := event.Data.(slack.InteractionCallback)
+					if !ok {
+						log.Printf("Could not type cast the message to a Interaction callback: %v\n", interaction)
+						continue
+					}
+
+					err := handleInteractionEvent(interaction, client)
+					if err != nil {
+						log.Fatal(err)
+					}
+					socketClient.Ack(*event.Request)
+
+					//end of switch
 				}
 			}
 
