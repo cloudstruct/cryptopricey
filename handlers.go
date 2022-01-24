@@ -75,9 +75,9 @@ func handleAppMentionEvent(event *slackevents.AppMentionEvent, client *slack.Cli
 
 	// Send the message to the channel
 	// The Channel is available in the event message
-	_, _, err = client.PostMessage(event.Channel, slack.MsgOptionAttachments(attachment))
-	if err != nil {
-		return fmt.Errorf("failed to post message: %w", err)
+	_, _, err2 := client.PostMessage(event.Channel, slack.MsgOptionAttachments(attachment))
+	if err2 != nil {
+		return fmt.Errorf("failed to post message: %w", err2)
 	}
 	return nil
 }
@@ -104,7 +104,7 @@ type DataFile struct {
 
 // handleCryptopriceyTickers will take care of /cryptoprice submissions
 func handleCryptopriceyTickers(command slack.SlashCommand, client *slack.Client) error {
-	data := make(map[string]DataFile)
+	data := make(map[string]*DataFile)
 
 	dataDir := os.Getenv("DATA_DIR")
 	configFile := dataDir + "/conf.yaml"
@@ -130,25 +130,29 @@ func handleCryptopriceyTickers(command slack.SlashCommand, client *slack.Client)
 		log.Fatal(err)
 	}
 
-	log.Printf("%+v", &data)
-	log.Printf("Length: %s", len(data))
+	log.Printf("********** Old Tickers: %+v", data[command.ChannelID].Tickers)
+	data[command.ChannelID].Tickers = command.Text
+	log.Printf("********** Updated Tickers: %+v", data[command.ChannelID].Tickers)
 
-	// The Input is found in the text field so
-	// Create the attachment and assigned based on the message
-//	attachment := slack.Attachment{}
+	dataOut, err2 := yaml.Marshal(&data)
+	if err2 != nil {
+		log.Fatal(err)
+	}
 
-//	adaPrice := getCryptoPrice(command.Text)
+	if err3 := ioutil.WriteFile(configFile, dataOut, 0600); err3 != nil {
+	     log.Fatal(err3)
+	}
 
-	// Greet the user
-//	attachment.Text = fmt.Sprintf("The spot price of %s is '%s'\n", command.Text, adaPrice)
-//	attachment.Color = "#4af030"
-//
-//	// Send the message to the channel
-//	// The Channel is available in the command.ChannelID
-//	_, _, err := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
-//	if err != nil {
-//		return fmt.Errorf("********* failed to post message: %w", err)
-//	}
+	attachment := slack.Attachment{}
+	attachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", command.Text)
+	attachment.Color = "#4af030"
+
+	// Send the message to the channel
+	// The Channel is available in the command.ChannelID
+	_, _, err3 := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
+	if err3 != nil {
+		return fmt.Errorf("********* failed to post message: %w", err)
+	}
 	return nil
 }
 
