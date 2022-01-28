@@ -6,16 +6,16 @@ import (
 	"io"
 	"net/http"
 	"time"
+	"errors"
 )
 
 type currencyData struct {
-	Id	string `json:"id,omitempty"`
-	Name	string `json:"name,omitempty"`
-	MinSize	string `json:"min_size,omitempty"`
+	Id      string `json:"id,omitempty"`
+	Name    string `json:"name,omitempty"`
+	MinSize string `json:"min_size,omitempty"`
 }
 
-
-func getCurrencies() ([]currencyData) {
+func getCurrencies() []currencyData {
 	var r map[string][]currencyData
 	client := &http.Client{Timeout: 10 * time.Second}
 
@@ -37,4 +37,17 @@ func getCurrencies() ([]currencyData) {
 
 	fmt.Println(r["data"])
 	return r["data"]
+}
+
+func validateCurrency(currenciesList []currencyData, currency string) error {
+	pass := false
+	for _, data := range currenciesList {
+		if data.Name == currency {
+			pass = true
+		}
+	}
+	if pass == false {
+		return errors.New("Currency is not valid"
+	}
+	return nil
 }

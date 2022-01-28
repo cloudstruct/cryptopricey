@@ -1,18 +1,19 @@
 package main
 
 import (
-	"os"
-	"log"
+	"errors"
+	"fmt"
 	"github.com/slack-go/slack"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
-	"errors"
+	"log"
+	"os"
 )
 
 type DataFile struct {
-        Tickers string  `yaml:"tickers"`
-        Cron    string  `yaml:"cron"`
-        Currency       string  `yaml:"currency"`
+	Tickers  string `yaml:"tickers"`
+	Cron     string `yaml:"cron"`
+	Currency string `yaml:"currency"`
 }
 
 func readYAML() map[string]*DataFile {
@@ -41,19 +42,15 @@ func readYAML() map[string]*DataFile {
 
 // handleCryptopriceyConfig will take care of /cryptoprice submissions
 func handleCryptopriceyConfig(command slack.SlashCommand, client *slack.Client) error {
-	if len(command.Text) < 1 {
-		log.Printf("*********** Empty Ticker Symbol")
-		return nil
-	}
-
 	data := readYAML()
+	modalRequest := generateModalRequest(command, data)
 
-	log.Printf("********** Old Tickers: %+v", data[command.ChannelID].Tickers)
-	modalReturn := generateModalRequest()
-	log.Printf("%+v", modalReturn)
-
-//	data[command.ChannelID].Tickers = command.Text
-//	log.Printf("********** Updated Tickers: %+v", data[command.ChannelID].Tickers)
+	_, err := client.OpenView(command.TriggerID, modalRequest)
+	if err != nil {
+		fmt.Printf("Error opening view: %s", err)
+	}
+	//	data[command.ChannelID].Tickers = command.Text
+	//	log.Printf("********** Updated Tickers: %+v", data[command.ChannelID].Tickers)
 
 	dataOut, err := yaml.Marshal(&data)
 	if err != nil {
@@ -61,47 +58,72 @@ func handleCryptopriceyConfig(command slack.SlashCommand, client *slack.Client) 
 		log.Fatal(err)
 	}
 
-//	if err = ioutil.WriteFile(configFile, dataOut, 0600); err != nil {
-//	     log.Fatal(err)
-//	}
+	//	if err = ioutil.WriteFile(configFile, dataOut, 0600); err != nil {
+	//	     log.Fatal(err)
+	//	}
 
-//	attachment := slack.Attachment{}
-//	attachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", command.Text)
-//	attachment.Color = "#4af030"
+	//	attachment := slack.Attachment{}
+	//	attachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", command.Text)
+	//	attachment.Color = "#4af030"
 
 	// Send the message to the channel
 	// The Channel is available in the command.ChannelID
-//	_, _, err3 := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
-//	if err3 != nil {
-//		return fmt.Errorf("********* failed to post message: %w", err)
-//	}
+	//	_, _, err3 := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
+	//	if err3 != nil {
+	//		return fmt.Errorf("********* failed to post message: %w", err)
+	//	}
 	return nil
 }
 
-func generateModalRequest() slack.ModalViewRequest {
-	// Create a ModalViewRequest with a header and two inputs
-	titleText := slack.NewTextBlockObject("plain_text", "CryptoPricey Configuration", false, false)
-	closeText := slack.NewTextBlockObject("plain_text", "Close", false, false)
-	submitText := slack.NewTextBlockObject("plain_text", "Save", false, false)
+func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile) slack.ModalViewRequest {
+	currencyPlaceholderText := "USD"
+	currencyOptional := false
+	tickersPlaceholderText := "BTC,ETH,ADA"
+	tickersOptional := false
+	cronPlaceholderText := "* * */6 * *"
+	cronOptional := false
 
-	headerText := slack.NewTextBlockObject("mrkdwn", "Please enter the below information to configure CryptoPricey", false, false)
+	if data[command.ChannelID].Currency != "" {
+		currencyPlaceholderText = data[command.ChannelID].Currency
+		currencyOptional = true
+	}
+	if data[command.ChannelID].Tickers != "" {
+		tickersPlaceholderText = data[command.ChannelID].Tickers
+		tickersOptional = true
+	}
+	if data[command.ChannelID].Cron != "" {
+		cronPlaceholderText = data[command.ChannelID].Cron
+		cronOptional = true
+	}
+
+	// Create a ModalViewRequest with a header and two inputs
+	titleText := slack.NewTextBlockObject("plain_text", "CryptoPricey Config", false, false)
+	closeText := slack.NewTextBlockObject("plain_text", "Close", false, false)
+	submitText := slack.NewTextBlockObject("plain_text", "Submit", false, false)
+
+	// Create a ModalViewRequest with a header and two inputs
+
+	headerText := slack.NewTextBlockObject("mrkdwn", "Configuration fields are optional once intially set.\nPlaceholder text is set to current values in that case.", false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
 
 	currencyText := slack.NewTextBlockObject("plain_text", "Base Currency", false, false)
-	currencyPlaceholder := slack.NewTextBlockObject("plain_text", "USD", false, false)
+	currencyPlaceholder := slack.NewTextBlockObject("plain_text", currencyPlaceholderText, false, false)
 	currencyElement := slack.NewPlainTextInputBlockElement(currencyPlaceholder, "currency")
 	// Notice that blockID is a unique identifier for a block
 	currency := slack.NewInputBlock("Currency", currencyText, currencyElement)
+	currency.Optional = currencyOptional
 
 	tickersText := slack.NewTextBlockObject("plain_text", "Tickers", false, false)
-	tickersPlaceholder := slack.NewTextBlockObject("plain_text", "BTC,ETH,ADA", false, false)
+	tickersPlaceholder := slack.NewTextBlockObject("plain_text", tickersPlaceholderText, false, false)
 	tickersElement := slack.NewPlainTextInputBlockElement(tickersPlaceholder, "tickers")
 	tickers := slack.NewInputBlock("Tickers", tickersText, tickersElement)
+	tickers.Optional = tickersOptional
 
 	cronText := slack.NewTextBlockObject("plain_text", "Cron Schedule", false, false)
-	cronPlaceholder := slack.NewTextBlockObject("plain_text", "* */6 * * *", false, false)
+	cronPlaceholder := slack.NewTextBlockObject("plain_text", cronPlaceholderText, false, false)
 	cronElement := slack.NewPlainTextInputBlockElement(cronPlaceholder, "cron")
 	cron := slack.NewInputBlock("Cron", cronText, cronElement)
+	cron.Optional = cronOptional
 
 	blocks := slack.Blocks{
 		BlockSet: []slack.Block{

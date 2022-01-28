@@ -96,21 +96,19 @@ func handleInteractionEvent(interaction slack.InteractionCallback, client *slack
 	// Switch depending on the Type
 	log.Printf("********** The response was of type: %s\n", interaction.Type)
 	switch interaction.Type {
-	case slack.InteractionTypeBlockActions:
-		// This is a block action, so we need to handle it
-		for _, action := range interaction.ActionCallback.BlockActions {
-			if action.ActionID == "timeselection" {
-				log.Printf("********* ActionID: %s", action.ActionID)
-				log.Printf("********* Selected Time: %s", action.SelectedTime)
-				log.Printf("********* ChannelID: %s", interaction.Container.ChannelID)
-				//				log.Printf("********* Selected option: %s", action.TimePickerElement.InitialTime)
-			}
-			if action.ActionID == "frequency" {
-				log.Printf("********* ActionID: %s", action.ActionID)
-				log.Printf("********* Selected option: %s", action.SelectedOption.Value)
+	case slack.InteractionTypeViewSubmission:
+		if interaction.View.State.Values["Currency"]["currency"].Value != nil {
+			err := validateCurrency(getCurrencies(), interaction.View.State.Values["Currency"]["currency"].Value)
+			if err == nil {
+				// set new currency in YAML
 			}
 		}
-
+		if interaction.View.State.Values["Tickers"]["tickers"].Value != nil {
+			// Set new tickers in YAML
+		}
+		if interaction.View.State.Values["Cron"]["cron"].Value != nil {
+			// Validate cron if possible, set new cron in yaml
+		}
 	default:
 
 	}

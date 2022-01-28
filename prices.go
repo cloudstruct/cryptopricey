@@ -1,11 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/slack-go/slack"
-	"log"
 	"io"
-	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 )
@@ -22,8 +22,8 @@ type Data struct {
 
 // handleCryptopriceyCommand will take care of /cryptoprice submissions
 func handleCryptopriceyCommand(command slack.SlashCommand, client *slack.Client) error {
-        data := readYAML()
-        log.Printf("********** Currency: %+v", data[command.ChannelID].Currency)
+	data := readYAML()
+	log.Printf("********** Currency: %+v", data[command.ChannelID].Currency)
 
 	// The Input is found in the text field so
 	// Create the attachment and assigned based on the message
