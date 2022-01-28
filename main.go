@@ -2,53 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
-	"io"
 	"log"
-	"net/http"
 	"os"
-	"time"
 )
-
-type responseData struct {
-	Data Data `json:"data,omitempty"`
-}
-
-type Data struct {
-	Base     string `json:"base,omitempty"`
-	Currency string `json:"currency,omitempty"`
-	Amount   string `json:"amount,omitempty"`
-}
-
-func getCryptoPrice(ticker string) string {
-	client := &http.Client{Timeout: 10 * time.Second}
-
-	resp, err := client.Get(fmt.Sprintf("https://api.coinbase.com/v2/prices/%s-USD/spot", ticker))
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	var r responseData
-	err = json.Unmarshal(body, &r)
-	if err != nil {
-		panic(err)
-	}
-
-	return r.Data.Amount
-}
-
-// Global for data config directory
 
 func main() {
 
