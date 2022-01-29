@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/slack-go/slack"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,10 +18,9 @@ type DataFile struct {
 
 func readYAML() map[string]*DataFile {
 	data := make(map[string]*DataFile)
-	dataDir := os.Getenv("DATA_DIR")
-	configFile := dataDir + "/conf.yaml"
-	log.Printf("********** Loading file: " + configFile)
+	configFile := os.Getenv("DATA_DIR") + "/conf.yaml"
 
+	log.Printf("********** Loading file: " + configFile)
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -40,42 +39,36 @@ func readYAML() map[string]*DataFile {
 
 }
 
-// handleCryptopriceyConfig will take care of /cryptoprice submissions
-func handleCryptopriceyConfig(command slack.SlashCommand, client *slack.Client) error {
-	data := readYAML()
-	modalRequest := generateModalRequest(command, data)
-
-	_, err := client.OpenView(command.TriggerID, modalRequest)
-	if err != nil {
-		fmt.Printf("Error opening view: %s", err)
-	}
-	//	data[command.ChannelID].Tickers = command.Text
-	//	log.Printf("********** Updated Tickers: %+v", data[command.ChannelID].Tickers)
-
+func writeYAML(data map[string]*DataFile) error {
 	dataOut, err := yaml.Marshal(&data)
+	configFile := os.Getenv("DATA_DIR") + "/conf.yaml"
+
 	if err != nil {
 		log.Printf("%+v", dataOut)
 		log.Fatal(err)
 	}
 
-	//	if err = ioutil.WriteFile(configFile, dataOut, 0600); err != nil {
-	//	     log.Fatal(err)
-	//	}
+	if err = ioutil.WriteFile(configFile, dataOut, 0600); err != nil {
+		log.Fatal(err)
+	}
 
-	//	attachment := slack.Attachment{}
-	//	attachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", command.Text)
-	//	attachment.Color = "#4af030"
-
-	// Send the message to the channel
-	// The Channel is available in the command.ChannelID
-	//	_, _, err3 := client.PostMessage(command.ChannelID, slack.MsgOptionAttachments(attachment))
-	//	if err3 != nil {
-	//		return fmt.Errorf("********* failed to post message: %w", err)
-	//	}
 	return nil
 }
 
-func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile) slack.ModalViewRequest {
+// handleCryptopriceyConfig will take care of /cryptoprice-config submissions
+func handleCryptopriceyConfig(command slack.SlashCommand, client *slack.Client) error {
+	data := readYAML()
+	modalRequest := generateModalRequest(command, data, command.ChannelID)
+
+	_, err := client.OpenView(command.TriggerID, modalRequest)
+	if err != nil {
+		fmt.Printf("Error opening view: %s", err)
+	}
+
+	return nil
+}
+
+func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile, channelid string) slack.ModalViewRequest {
 	currencyPlaceholderText := "USD"
 	currencyOptional := false
 	tickersPlaceholderText := "BTC,ETH,ADA"
@@ -140,5 +133,5 @@ func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile)
 	modalRequest.Close = closeText
 	modalRequest.Submit = submitText
 	modalRequest.Blocks = blocks
-	return modalRequest
+	return modalRequest, channelid
 }

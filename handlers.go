@@ -92,25 +92,75 @@ func handleSlashCommand(command slack.SlashCommand, client *slack.Client) (inter
 }
 
 func handleInteractionEvent(interaction slack.InteractionCallback, client *slack.Client) error {
+	data := readYAML()
+	log.Printf("*********** Loaded YAML Contents: \n%+v", data)
+
+	currencyAttachment := slack.Attachment{}
+	tickersAttachment := slack.Attachment{}
+	cronAttachment := slack.Attachment{}
+
+	currencyAttachment.Color = "#4af030"
+	yamlModified := false
+
+
 	// This is where we would handle the interaction
 	// Switch depending on the Type
+	log.Printf("********** The interaction looks like: \n%+v", interaction)
 	log.Printf("********** The response was of type: %s\n", interaction.Type)
+	log.Printf("********** The interaction Container looks like: \n%+v", interaction.Container)
 	switch interaction.Type {
 	case slack.InteractionTypeViewSubmission:
-		if interaction.View.State.Values["Currency"]["currency"].Value != nil {
-			err := validateCurrency(getCurrencies(), interaction.View.State.Values["Currency"]["currency"].Value)
+		if interaction.View.State.Values["Currency"]["currency"].Value != "null" {
+			currencyValue := interaction.View.State.Values["Currency"]["currency"].Value
+			log.Printf("********** Validating currency '%s'.", currencyValue)
+			err := validateCurrency(getCurrencies(), currencyValue)
 			if err == nil {
+				log.Printf("********** Currency '%s' validated successfully.", currencyValue)
+				log.Printf("********** Sending to channel ID '%s'", interaction.Container.ChannelID)
 				// set new currency in YAML
+				data[interaction.Container.ChannelID].Currency = currencyValue
+				currencyAttachment.Text = fmt.Sprintf("Base Currency has been updated to '%s'.", data[interaction.Container.ChannelID].Currency)
+				yamlModified = true
+			} else {
+				// Report invalid currency
+				log.Printf("********** Currency '%s' NOT validated successfully.", currencyValue)
+				currencyAttachment.Text = fmt.Sprintf("Ticket list *not* updated.  Invalid currency provided: '%s'", currencyValue)
 			}
 		}
-		if interaction.View.State.Values["Tickers"]["tickers"].Value != nil {
+		if interaction.View.State.Values["Tickers"]["tickers"].Value != "null" {
+			log.Printf("********** Processing Tickers '%s'.", interaction.View.State.Values["Tickers"]["tickers"].Value)
 			// Set new tickers in YAML
+			data[interaction.Container.ChannelID].Tickers = interaction.View.State.Values["Tickers"]["tickers"].Value
+			log.Printf("********** Processing Tickers '%s'.", interaction.View.State.Values["Tickers"]["tickers"].Value)
+			tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", data[interaction.Container.ChannelID].Tickers)
+			yamlModified = true
 		}
-		if interaction.View.State.Values["Cron"]["cron"].Value != nil {
+		if interaction.View.State.Values["Cron"]["cron"].Value != "null" {
+			log.Printf("********** Processing Cron '%s'.", interaction.View.State.Values["Cron"]["cron"].Value)
 			// Validate cron if possible, set new cron in yaml
+			data[interaction.Container.ChannelID].Cron = interaction.View.State.Values["Cron"]["cron"].Value
+			tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", data[interaction.Container.ChannelID].Tickers)
+			yamlModified = true
 		}
 	default:
 
+	}
+	log.Printf("********** Completed Interaction case/switch.")
+
+	if yamlModified == true {
+		log.Printf("********** Attempting to write YAML")
+		err := writeYAML(data)
+		if err != nil {
+			return fmt.Errorf("********* Error writing to YAML config: %w", err)
+		} else {
+			log.Printf("********** Successfully wrote YAML config.")
+		}
+
+		// Send the message to the channel
+		_, _, err = client.PostMessage(interaction.Container.ChannelID, slack.MsgOptionAttachments(currencyAttachment, tickersAttachment, cronAttachment))
+		if err != nil {
+			return fmt.Errorf("********* failed to post message: %w", err)
+		}
 	}
 
 	return nil
