@@ -6,6 +6,7 @@ import (
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -80,11 +81,11 @@ func handleAppMentionEvent(event *slackevents.AppMentionEvent, client *slack.Cli
 }
 
 // handleSlashCommand will take a slash command and route to the appropriate function
-func handleSlashCommand(command slack.SlashCommand, client *slack.Client) (interface{}, error) {
+func handleSlashCommand(command slack.SlashCommand, client *slack.Client, httpClient *http.Client) (interface{}, error) {
 	// We need to switch depending on the command
 	switch command.Command {
 	case "/cryptoprice":
-		return nil, handleCryptopriceyCommand(command, client)
+		return nil, handleCryptopriceyCommand(command, client, httpClient)
 	case "/cryptoprice-config":
 		return nil, handleCryptopriceyConfig(command, client)
 	}
@@ -100,8 +101,10 @@ func handleInteractionEvent(interaction slack.InteractionCallback, client *slack
 	cronAttachment := slack.Attachment{}
 
 	currencyAttachment.Color = "#4af030"
-	yamlModified := false
+	tickersAttachment.Color = "#5af035"
+	cronAttachment.Color = "#6af039"
 
+	yamlModified := false
 
 	// This is where we would handle the interaction
 	// Switch depending on the Type
@@ -110,36 +113,36 @@ func handleInteractionEvent(interaction slack.InteractionCallback, client *slack
 	log.Printf("********** The interaction Container looks like: \n%+v", interaction.Container)
 	switch interaction.Type {
 	case slack.InteractionTypeViewSubmission:
-		if interaction.View.State.Values["Currency"]["currency"].Value != "null" {
+		if interaction.View.State.Values["Currency"]["currency"].Value != "" {
 			currencyValue := interaction.View.State.Values["Currency"]["currency"].Value
 			log.Printf("********** Validating currency '%s'.", currencyValue)
 			err := validateCurrency(getCurrencies(), currencyValue)
 			if err == nil {
 				log.Printf("********** Currency '%s' validated successfully.", currencyValue)
-				log.Printf("********** Sending to channel ID '%s'", interaction.Container.ChannelID)
+				log.Printf("********** Sending to channel ID '%s'", interaction.View.PrivateMetadata)
 				// set new currency in YAML
-				data[interaction.Container.ChannelID].Currency = currencyValue
-				currencyAttachment.Text = fmt.Sprintf("Base Currency has been updated to '%s'.", data[interaction.Container.ChannelID].Currency)
+				data[interaction.View.PrivateMetadata].Currency = currencyValue
+				currencyAttachment.Text = fmt.Sprintf("Base Currency has been updated to `%s`.", data[interaction.View.PrivateMetadata].Currency)
 				yamlModified = true
 			} else {
 				// Report invalid currency
 				log.Printf("********** Currency '%s' NOT validated successfully.", currencyValue)
-				currencyAttachment.Text = fmt.Sprintf("Ticket list *not* updated.  Invalid currency provided: '%s'", currencyValue)
+				currencyAttachment.Text = fmt.Sprintf("Currency *not* updated.  Invalid currency provided: ` %s `", currencyValue)
 			}
 		}
-		if interaction.View.State.Values["Tickers"]["tickers"].Value != "null" {
+		if interaction.View.State.Values["Tickers"]["tickers"].Value != "" {
 			log.Printf("********** Processing Tickers '%s'.", interaction.View.State.Values["Tickers"]["tickers"].Value)
 			// Set new tickers in YAML
-			data[interaction.Container.ChannelID].Tickers = interaction.View.State.Values["Tickers"]["tickers"].Value
+			data[interaction.View.PrivateMetadata].Tickers = interaction.View.State.Values["Tickers"]["tickers"].Value
 			log.Printf("********** Processing Tickers '%s'.", interaction.View.State.Values["Tickers"]["tickers"].Value)
-			tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", data[interaction.Container.ChannelID].Tickers)
+			tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to `%s`.", data[interaction.View.PrivateMetadata].Tickers)
 			yamlModified = true
 		}
-		if interaction.View.State.Values["Cron"]["cron"].Value != "null" {
+		if interaction.View.State.Values["Cron"]["cron"].Value != "" {
 			log.Printf("********** Processing Cron '%s'.", interaction.View.State.Values["Cron"]["cron"].Value)
 			// Validate cron if possible, set new cron in yaml
-			data[interaction.Container.ChannelID].Cron = interaction.View.State.Values["Cron"]["cron"].Value
-			tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to [%s].", data[interaction.Container.ChannelID].Tickers)
+			data[interaction.View.PrivateMetadata].Cron = interaction.View.State.Values["Cron"]["cron"].Value
+			cronAttachment.Text = fmt.Sprintf("Cron has been updated to `%s`.", data[interaction.View.PrivateMetadata].Cron)
 			yamlModified = true
 		}
 	default:
@@ -157,7 +160,7 @@ func handleInteractionEvent(interaction slack.InteractionCallback, client *slack
 		}
 
 		// Send the message to the channel
-		_, _, err = client.PostMessage(interaction.Container.ChannelID, slack.MsgOptionAttachments(currencyAttachment, tickersAttachment, cronAttachment))
+		_, _, err = client.PostMessage(interaction.View.PrivateMetadata, slack.MsgOptionAttachments(currencyAttachment, tickersAttachment, cronAttachment))
 		if err != nil {
 			return fmt.Errorf("********* failed to post message: %w", err)
 		}

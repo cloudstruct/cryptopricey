@@ -39,7 +39,6 @@ func getCurrencies() []currencyData {
 		panic(err)
 	}
 
-	log.Println(r["data"])
 	return r["data"]
 }
 
@@ -47,20 +46,14 @@ func validateCurrency(currenciesList []currencyData, currency string) error {
 	pass := false
 	log.Printf("********* Evaluating Currency '%s'.", currency)
 	for _, data := range currenciesList {
-		log.Printf("********* Evaluating against currency: '%s'", data.Id)
 		if data.Id == currency {
 			pass = true
-			log.Printf("********* Currency '%s' passed validation.", currency)
 		}
 	}
 
-	log.Printf("********** Validation routine completed.")
-
 	if pass == false {
-		log.Printf("********** pass == false")
 		return errors.New("Currency input is not a valid selection.")
 	} else {
-		log.Printf("********** pass == true")
 	}
 
 	return nil

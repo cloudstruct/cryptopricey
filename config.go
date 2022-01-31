@@ -133,5 +133,6 @@ func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile,
 	modalRequest.Close = closeText
 	modalRequest.Submit = submitText
 	modalRequest.Blocks = blocks
-	return modalRequest, channelid
+	modalRequest.PrivateMetadata = command.ChannelID
+	return modalRequest
 }

@@ -7,8 +7,26 @@ import (
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
 	"log"
+	"net/http"
 	"os"
+	"time"
 )
+
+func httpClient() *http.Client {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.MaxIdleConns = 100
+	t.MaxConnsPerHost = 100
+	t.MaxIdleConnsPerHost = 100
+	t.TLSHandshakeTimeout = 10 * time.Second
+	t.ExpectContinueTimeout = 1 * time.Second
+
+	client := &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: t,
+	}
+
+	return client
+}
 
 func main() {
 
@@ -17,6 +35,9 @@ func main() {
 
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	appToken := os.Getenv("SLACK_APP_TOKEN")
+
+	// Load HTTP Client
+	httpClient := httpClient()
 
 	// Create a new client to slack by giving token
 	// Set debug to true while developing
@@ -72,7 +93,7 @@ func main() {
 						continue
 					}
 					// handleSlashCommand will take care of the command
-					payload, err := handleSlashCommand(command, client)
+					payload, err := handleSlashCommand(command, client, httpClient)
 					if err != nil {
 						log.Fatal(err)
 					}
