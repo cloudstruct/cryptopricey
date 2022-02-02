@@ -49,7 +49,7 @@ func getCryptoPrice(ticker string, currency string, httpClient *http.Client, ch 
 	wg.Done()
 }
 
-func asyncHttp(tickers string, currency string, httpClient *http.Client) []responseData {
+func asyncGetCryptoPrice(tickers string, currency string, httpClient *http.Client) []responseData {
 	var responses []responseData
 	var wg sync.WaitGroup
 
@@ -97,7 +97,7 @@ func handleCryptopriceyCommand(command slack.SlashCommand, client *slack.Client,
 	attachment.Color = "#4af030"
 
 	log.Println("********** Starting Async HTTP")
-	prices := asyncHttp(command.Text, data[command.ChannelID].Currency, httpClient)
+	prices := asyncGetCryptoPrice(command.Text, data[command.ChannelID].Currency, httpClient)
 	if prices == nil {
 		responseTextList = append(responseTextList, fmt.Sprintf("Tickerlist '%s' contains more than 5 tickers.", command.Text))
 		log.Printf("********** Tickerlist '%s' contains more than 5 tickers", command.Text)
