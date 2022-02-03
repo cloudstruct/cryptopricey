@@ -24,14 +24,11 @@ type Data struct {
 func getCryptoPrice(ticker string, currency string, httpClient *http.Client, ch chan<- responseData, wg *sync.WaitGroup) {
 	var r responseData
 
-	log.Printf("************* Calling coinbase with ticker '%s' and currency '%s'", ticker, currency)
-
 	resp, err := httpClient.Get(fmt.Sprintf("https://api.coinbase.com/v2/prices/%s-%s/spot", ticker, currency))
-	log.Printf("************* ty coinbase '%s'", resp)
-
 	if err != nil {
 		panic(err)
 	}
+
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
@@ -43,7 +40,6 @@ func getCryptoPrice(ticker string, currency string, httpClient *http.Client, ch 
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("************* ty coinbase '%s'", r)
 
 	ch <- r
 	wg.Done()
@@ -54,7 +50,6 @@ func asyncGetCryptoPrice(tickers string, currency string, httpClient *http.Clien
 	var wg sync.WaitGroup
 
 	tickerList := strings.Split(tickers, ",")
-	log.Printf("************* TickerList '%s'", tickerList)
 
 	// Open up channel for Async HTTP
 	ch := make(chan responseData)
@@ -64,9 +59,7 @@ func asyncGetCryptoPrice(tickers string, currency string, httpClient *http.Clien
 		return nil
 	} else {
 		for _, ticker := range tickerList {
-			log.Printf("************ TickerList inner loop '%s'", tickerList)
 			wg.Add(1)
-			log.Printf("************* Calling getCryptoPrice with ticker '%s' and currency '%s'", ticker, currency)
 			go getCryptoPrice(ticker, currency, httpClient, ch, &wg)
 		}
 
@@ -89,14 +82,12 @@ func handleCryptopriceyCommand(command slack.SlashCommand, client *slack.Client,
 	var responseTextList []string
 
 	data := readYAML()
-	log.Printf("********** Currency: %+v", data[command.ChannelID].Currency)
 
 	// The Input is found in the text field so
 	// Create the attachment and assigned based on the message
 	attachment := slack.Attachment{}
 	attachment.Color = "#4af030"
 
-	log.Println("********** Starting Async HTTP")
 	prices := asyncGetCryptoPrice(command.Text, data[command.ChannelID].Currency, httpClient)
 	if prices == nil {
 		responseTextList = append(responseTextList, fmt.Sprintf("Tickerlist '%s' contains more than 5 tickers.", command.Text))
@@ -104,7 +95,6 @@ func handleCryptopriceyCommand(command slack.SlashCommand, client *slack.Client,
 
 	} else {
 		for _, price := range prices {
-			log.Printf("********** Appending cryptocurrency '%s' paired with currency '%s'", price.Data.Base, data[command.ChannelID].Currency)
 			responseTextList = append(responseTextList, fmt.Sprintf("The spot price of '%s-%s' is '%s'.", price.Data.Base, data[command.ChannelID].Currency, price.Data.Amount))
 		}
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/joho/godotenv"
+	"github.com/robfig/cron/v3"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
@@ -51,12 +52,19 @@ func main() {
 		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)),
 	)
 
+	mainCron := cron.New()
+	mainCron, err := rebuildCron(mainCron, client, httpClient)
+	if err != nil {
+		log.Fatal(err)
+	}
+	mainCron.Start()
+
 	// Create a context that can be used to cancel goroutine
 	ctx, cancel := context.WithCancel(context.Background())
 	// Make this cancel called properly in a real program , graceful shutdown etc
 	defer cancel()
 
-	go func(ctx context.Context, client *slack.Client, socketClient *socketmode.Client) {
+	go func(mainCron *cron.Cron, ctx context.Context, client *slack.Client, socketClient *socketmode.Client) {
 		// Create a for loop that selects either the context cancellation or the events incomming
 		for {
 			select {
@@ -108,7 +116,7 @@ func main() {
 						continue
 					}
 
-					err := handleInteractionEvent(interaction, client)
+					err := handleInteractionEvent(mainCron, interaction, client, httpClient)
 					if err != nil {
 						log.Fatal(err)
 					}
@@ -119,7 +127,7 @@ func main() {
 			}
 
 		}
-	}(ctx, client, socketClient)
+	}(mainCron, ctx, client, socketClient)
 
 	socketClient.Run()
 }

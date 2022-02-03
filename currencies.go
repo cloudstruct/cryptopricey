@@ -44,7 +44,6 @@ func getCurrencies() []currencyData {
 
 func validateCurrency(currenciesList []currencyData, currency string) error {
 	pass := false
-	log.Printf("********* Evaluating Currency '%s'.", currency)
 	for _, data := range currenciesList {
 		if data.Id == currency {
 			pass = true
