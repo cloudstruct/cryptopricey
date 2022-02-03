@@ -149,8 +149,8 @@ func handleInteractionEvent(mainCron *cron.Cron, interaction slack.InteractionCa
 		// Rebuild the cron list
 		_, err = rebuildCron(mainCron, client, httpClient)
 		if err != nil {
-                        return fmt.Errorf("********* Error rebuilding Cron: %w", err)
-                }
+			return fmt.Errorf("********* Error rebuilding Cron: %w", err)
+		}
 
 		// Send the message to the channel
 		_, _, err = client.PostMessage(interaction.View.PrivateMetadata, slack.MsgOptionAttachments(currencyAttachment, tickersAttachment, cronAttachment))

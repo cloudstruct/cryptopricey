@@ -112,7 +112,7 @@ func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile,
 	tickers := slack.NewInputBlock("Tickers", tickersText, tickersElement)
 	tickers.Optional = tickersOptional
 
-	cronText := slack.NewTextBlockObject("plain_text", "Cron Schedule", false, false)
+	cronText := slack.NewTextBlockObject("plain_text", "Cron Schedule (UTC)", false, false)
 	cronPlaceholder := slack.NewTextBlockObject("plain_text", cronPlaceholderText, false, false)
 	cronElement := slack.NewPlainTextInputBlockElement(cronPlaceholder, "cron")
 	cron := slack.NewInputBlock("Cron", cronText, cronElement)

@@ -52,7 +52,7 @@ func main() {
 		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)),
 	)
 
-	mainCron := cron.New()
+	mainCron := cron.New(cron.WithLocation(time.UTC))
 	mainCron, err := rebuildCron(mainCron, client, httpClient)
 	if err != nil {
 		log.Fatal(err)
