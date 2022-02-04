@@ -94,30 +94,52 @@ func handleSlashCommand(command slack.SlashCommand, client *slack.Client, httpCl
 }
 
 func handleInteractionEvent(mainCron *cron.Cron, interaction slack.InteractionCallback, client *slack.Client, httpClient *http.Client) error {
+	var placeholderString string
+	var dataFile DataFile
+	placeholderString = interaction.View.PrivateMetadata
 	data := readYAML()
 
 	currencyAttachment := slack.Attachment{}
 	tickersAttachment := slack.Attachment{}
 	cronAttachment := slack.Attachment{}
+	deleteAttachment := slack.Attachment{}
 
 	currencyAttachment.Color = "#4af030"
 	tickersAttachment.Color = "#5af035"
 	cronAttachment.Color = "#6af039"
+	deleteAttachment.Color = "#FF0000"
 
 	yamlModified := false
 
 	// This is where we would handle the interaction
 	// Switch depending on the Type
 	switch interaction.Type {
+	case slack.InteractionTypeBlockActions:
+		for _, block := range interaction.ActionCallback.BlockActions {
+			if block.ActionID == "delete" {
+				if _, ok := data[placeholderString]; ok {
+					delete(data, placeholderString)
+					yamlModified = true
+					deleteAttachment.Text = fmt.Sprintf("Config for this channel has been deleted!")
+				}
+			}
+		}
+
 	case slack.InteractionTypeViewSubmission:
 		if interaction.View.State.Values["Currency"]["currency"].Value != "" {
 			currencyValue := interaction.View.State.Values["Currency"]["currency"].Value
 			err := validateCurrency(getCurrencies(), currencyValue)
 			if err == nil {
 				// set new currency in YAML struct
-				data[interaction.View.PrivateMetadata].Currency = currencyValue
-				currencyAttachment.Text = fmt.Sprintf("Base Currency has been updated to `%s`.", data[interaction.View.PrivateMetadata].Currency)
-				yamlModified = true
+				if _, ok := data[placeholderString]; ok {
+					data[placeholderString].Currency = currencyValue
+					currencyAttachment.Text = fmt.Sprintf("Base Currency has been updated to `%s`.", data[placeholderString].Currency)
+					yamlModified = true
+				} else {
+					// Must create map[string] to house new *DataFile
+					dataFile.Currency = currencyValue
+					data[placeholderString] = &dataFile
+				}
 			} else {
 				// Report invalid currency
 				log.Printf("********** Currency '%s' NOT validated successfully.", currencyValue)
@@ -125,16 +147,26 @@ func handleInteractionEvent(mainCron *cron.Cron, interaction slack.InteractionCa
 			}
 		}
 		if interaction.View.State.Values["Tickers"]["tickers"].Value != "" {
-			// Set new tickers in YAML
-			data[interaction.View.PrivateMetadata].Tickers = interaction.View.State.Values["Tickers"]["tickers"].Value
-			tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to `%s`.", data[interaction.View.PrivateMetadata].Tickers)
-			yamlModified = true
+			if _, ok := data[placeholderString]; ok {
+				// Set new tickers in YAML
+				data[placeholderString].Tickers = interaction.View.State.Values["Tickers"]["tickers"].Value
+				tickersAttachment.Text = fmt.Sprintf("Ticker list has been updated to `%s`.", data[placeholderString].Tickers)
+				yamlModified = true
+			} else {
+				dataFile.Tickers = interaction.View.State.Values["Tickers"]["tickers"].Value
+				data[placeholderString] = &dataFile
+			}
 		}
 		if interaction.View.State.Values["Cron"]["cron"].Value != "" {
-			// Validate cron if possible, set new cron in yaml
-			data[interaction.View.PrivateMetadata].Cron = interaction.View.State.Values["Cron"]["cron"].Value
-			cronAttachment.Text = fmt.Sprintf("Cron has been updated to `%s`.", data[interaction.View.PrivateMetadata].Cron)
-			yamlModified = true
+			if _, ok := data[placeholderString]; ok {
+				// Validate cron if possible, set new cron in yaml
+				data[placeholderString].Cron = interaction.View.State.Values["Cron"]["cron"].Value
+				cronAttachment.Text = fmt.Sprintf("Cron has been updated to `%s`.", data[placeholderString].Cron)
+				yamlModified = true
+			} else {
+				dataFile.Cron = interaction.View.State.Values["Cron"]["cron"].Value
+				data[placeholderString] = &dataFile
+			}
 		}
 	default:
 
@@ -153,10 +185,11 @@ func handleInteractionEvent(mainCron *cron.Cron, interaction slack.InteractionCa
 		}
 
 		// Send the message to the channel
-		_, _, err = client.PostMessage(interaction.View.PrivateMetadata, slack.MsgOptionAttachments(currencyAttachment, tickersAttachment, cronAttachment))
+		_, _, err = client.PostMessage(placeholderString, slack.MsgOptionAttachments(currencyAttachment, tickersAttachment, cronAttachment, deleteAttachment))
 		if err != nil {
 			return fmt.Errorf("********* failed to post message: %w", err)
 		}
+
 	}
 
 	return nil

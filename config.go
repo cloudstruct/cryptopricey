@@ -76,17 +76,21 @@ func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile,
 	cronPlaceholderText := "* * */6 * *"
 	cronOptional := false
 
-	if data[command.ChannelID].Currency != "" {
-		currencyPlaceholderText = data[command.ChannelID].Currency
-		currencyOptional = true
-	}
-	if data[command.ChannelID].Tickers != "" {
-		tickersPlaceholderText = data[command.ChannelID].Tickers
-		tickersOptional = true
-	}
-	if data[command.ChannelID].Cron != "" {
-		cronPlaceholderText = data[command.ChannelID].Cron
-		cronOptional = true
+	if _, ok := data[command.ChannelID]; ok {
+		if data[command.ChannelID].Currency != "" {
+			currencyPlaceholderText = data[command.ChannelID].Currency
+			currencyOptional = true
+		}
+
+		if data[command.ChannelID].Tickers != "" {
+			tickersPlaceholderText = data[command.ChannelID].Tickers
+			tickersOptional = true
+		}
+
+		if data[command.ChannelID].Cron != "" {
+			cronPlaceholderText = data[command.ChannelID].Cron
+			cronOptional = true
+		}
 	}
 
 	// Create a ModalViewRequest with a header and two inputs
@@ -118,12 +122,21 @@ func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile,
 	cron := slack.NewInputBlock("Cron", cronText, cronElement)
 	cron.Optional = cronOptional
 
+	// Remove config section
+	removeBtnTxt := slack.NewTextBlockObject("plain_text", "DELETE", false, false)
+	removeBtn := slack.NewButtonBlockElement("delete", "delete", removeBtnTxt)
+	removeBtn.Style = "danger"
+	removeAccessory := slack.NewAccessory(removeBtn)
+	removeText := slack.NewTextBlockObject("mrkdwn", "Remove the existing config for this channel.\nCaution: This will remove your channel config permanently!", false, false)
+	removeSection := slack.NewSectionBlock(removeText, nil, removeAccessory)
+
 	blocks := slack.Blocks{
 		BlockSet: []slack.Block{
 			headerSection,
 			currency,
 			tickers,
 			cron,
+			removeSection,
 		},
 	}
 
