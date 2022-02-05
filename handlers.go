@@ -60,23 +60,16 @@ func handleAppMentionEvent(event *slackevents.AppMentionEvent, client *slack.Cli
 		},
 	}
 
-	if strings.Contains(text, "hello") {
-		// Greet the user
-		attachment.Text = fmt.Sprintf("Hello %s", user.Name)
-		attachment.Pretext = "Greetings"
-		attachment.Color = "#4af030"
-	} else {
-		// Send a message to the user
-		attachment.Text = fmt.Sprintf("How can I help you %s?", user.Name)
-		attachment.Pretext = "How can I be of service"
-		attachment.Color = "#3d3d3d"
-	}
+	// Send a message to the user
+	attachment.Text = fmt.Sprintf("%s, Please use `/cryptoprice` or `/cryptoprice-config` commands.", user.Name)
+	attachment.Pretext = "Chat messaging not supported."
+	attachment.Color = "#3d3d3d"
 
 	// Send the message to the channel
 	// The Channel is available in the event message
-	_, _, err2 := client.PostMessage(event.Channel, slack.MsgOptionAttachments(attachment))
-	if err2 != nil {
-		return fmt.Errorf("failed to post message: %w", err2)
+	_, _, err = client.PostMessage(event.Channel, slack.MsgOptionAttachments(attachment))
+	if err != nil {
+		return fmt.Errorf("failed to post message: %w", err)
 	}
 	return nil
 }
