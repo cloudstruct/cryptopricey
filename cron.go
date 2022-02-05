@@ -19,7 +19,7 @@ func emptyCron(cronObject *cron.Cron) error {
 		cronObject.Remove(entry.ID)
 		postCronSize = len(cronObject.Entries())
 		if postCronSize >= preCronSize {
-			log.Printf("******** ERROR: Could not clear entryID '%s' for cronObject: %+v", entry.ID, cronObject)
+			log.Printf("******** ERROR: Could not clear entryID '%+v' for cronObject: %+v", entry.ID, cronObject)
 			return errors.New("ERROR: Could not clear entryID from cronObject.")
 		}
 	}
@@ -44,7 +44,12 @@ func rebuildCron(cronObject *cron.Cron, client *slack.Client, httpClient *http.C
 			if channelConfig.Currency == "" {
 				channelConfig.Currency = "USD"
 			}
-			_, err = cronObject.AddFunc(channelConfig.Cron, func() { announceCron(channelId, channelConfig.Tickers, channelConfig.Currency, client, httpClient) })
+			_, err = cronObject.AddFunc(channelConfig.Cron, func() {
+				err := announceCron(channelId, channelConfig.Tickers, channelConfig.Currency, client, httpClient)
+				if err != nil {
+					panic(err)
+				}
+			})
 			if err != nil {
 				log.Printf("********** ERROR: cronObject.AddFunc failed: '%+v'", err)
 				return cronObject, err

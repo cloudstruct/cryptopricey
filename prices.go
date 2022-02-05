@@ -41,6 +41,11 @@ func getCryptoPrice(ticker string, currency string, httpClient *http.Client, ch 
 		panic(err)
 	}
 
+	if r.Data.Base == "" {
+		r.Data.Base = ticker
+		r.Data.Amount = "not_supported"
+	}
+
 	ch <- r
 	wg.Done()
 }
@@ -80,22 +85,35 @@ func asyncGetCryptoPrice(tickers string, currency string, httpClient *http.Clien
 // handleCryptopriceyCommand will take care of /cryptoprice submissions
 func handleCryptopriceyCommand(command slack.SlashCommand, client *slack.Client, httpClient *http.Client) error {
 	var responseTextList []string
-
+	var currency string
 	data := readYAML()
+
+	if _, found := data[command.ChannelID]; found {
+		currency = data[command.ChannelID].Currency
+		if currency == "" {
+			currency = "USD"
+		}
+	} else {
+		currency = "USD"
+	}
 
 	// The Input is found in the text field so
 	// Create the attachment and assigned based on the message
 	attachment := slack.Attachment{}
 	attachment.Color = "#4af030"
 
-	prices := asyncGetCryptoPrice(command.Text, data[command.ChannelID].Currency, httpClient)
+	prices := asyncGetCryptoPrice(command.Text, currency, httpClient)
 	if prices == nil {
 		responseTextList = append(responseTextList, fmt.Sprintf("Tickerlist '%s' contains more than 5 tickers.", command.Text))
 		log.Printf("********** Tickerlist '%s' contains more than 5 tickers", command.Text)
 
 	} else {
 		for _, price := range prices {
-			responseTextList = append(responseTextList, fmt.Sprintf("The spot price of '%s-%s' is '%s'.", price.Data.Base, data[command.ChannelID].Currency, price.Data.Amount))
+			if price.Data.Amount == "not_supported" {
+				responseTextList = append(responseTextList, fmt.Sprintf("The cryptocurrency pair '%s-%s' is not currently supported.", price.Data.Base, currency))
+			} else {
+				responseTextList = append(responseTextList, fmt.Sprintf("The spot price of '%s-%s' is '%s'.", price.Data.Base, currency, price.Data.Amount))
+			}
 		}
 	}
 

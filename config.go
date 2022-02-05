@@ -73,7 +73,7 @@ func generateModalRequest(command slack.SlashCommand, data map[string]*DataFile,
 	currencyOptional := false
 	tickersPlaceholderText := "BTC,ETH,ADA"
 	tickersOptional := false
-	cronPlaceholderText := "* * */6 * *"
+	cronPlaceholderText := "0 */6 * * *"
 	cronOptional := false
 
 	if _, ok := data[command.ChannelID]; ok {

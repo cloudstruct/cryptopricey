@@ -32,7 +32,10 @@ func httpClient() *http.Client {
 func main() {
 
 	// Load Env variables from .dot file
-	godotenv.Load(".env")
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	appToken := os.Getenv("SLACK_APP_TOKEN")
@@ -53,7 +56,7 @@ func main() {
 	)
 
 	mainCron := cron.New(cron.WithLocation(time.UTC))
-	mainCron, err := rebuildCron(mainCron, client, httpClient)
+	mainCron, err = rebuildCron(mainCron, client, httpClient)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -129,5 +132,8 @@ func main() {
 		}
 	}(mainCron, ctx, client, socketClient)
 
-	socketClient.Run()
+	err = socketClient.Run()
+	if err != nil {
+		panic(err)
+	}
 }

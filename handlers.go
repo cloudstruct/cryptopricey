@@ -120,7 +120,7 @@ func handleInteractionEvent(mainCron *cron.Cron, interaction slack.InteractionCa
 				if _, ok := data[placeholderString]; ok {
 					delete(data, placeholderString)
 					yamlModified = true
-					deleteAttachment.Text = fmt.Sprintf("Config for this channel has been deleted!")
+					deleteAttachment.Text = "Config for this channel has been deleted!"
 				}
 			}
 		}
@@ -172,7 +172,7 @@ func handleInteractionEvent(mainCron *cron.Cron, interaction slack.InteractionCa
 
 	}
 
-	if yamlModified == true {
+	if yamlModified {
 		err := writeYAML(data)
 		if err != nil {
 			return fmt.Errorf("********* Error writing to YAML config: %w", err)

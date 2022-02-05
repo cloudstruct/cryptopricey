@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -20,22 +19,22 @@ func getCurrencies() []currencyData {
 	var r map[string][]currencyData
 	client := &http.Client{Timeout: 10 * time.Second}
 
-	resp, err := client.Get(fmt.Sprintf("https://api.coinbase.com/v2/currencies"))
+	resp, err := client.Get("https://api.coinbase.com/v2/currencies")
 	if err != nil {
-		log.Printf("*********** Client.Get Error")
+		log.Println("*********** Client.Get Error")
 		panic(err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("*********** io.ReadAll Error")
+		log.Println("*********** io.ReadAll Error")
 		panic(err)
 	}
 
 	err = json.Unmarshal(body, &r)
 	if err != nil {
-		log.Printf("*********** json.Unmarshal Error")
+		log.Println("*********** json.Unmarshal Error")
 		panic(err)
 	}
 
@@ -50,9 +49,8 @@ func validateCurrency(currenciesList []currencyData, currency string) error {
 		}
 	}
 
-	if pass == false {
+	if !pass {
 		return errors.New("Currency input is not a valid selection.")
-	} else {
 	}
 
 	return nil
