@@ -55,7 +55,11 @@ func handleAppHomeOpenedEvent(event *slackevents.AppHomeOpenedEvent, client *sla
 		log.Printf("Unable to read view `AppHomeView`: %v", err)
 	}
 	view := slack.HomeTabViewRequest{}
-	json.Unmarshal([]byte(str), &view)
+
+	err = json.Unmarshal([]byte(str), &view)
+	if err != nil {
+		panic(err)
+	}
 
 	// Publish the view
 	_, err = client.PublishView(event.User, view, "")
