@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/joho/godotenv"
 	"github.com/robfig/cron/v3"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
-	"log"
-	"net/http"
-	"os"
-	"time"
 )
 
 func httpClient() *http.Client {
@@ -90,7 +91,7 @@ func main() {
 					// We need to send an Acknowledge to the slack server
 					socketClient.Ack(*event.Request)
 					// Now we have an Events API event, but this event type can in turn be many types, so we actually need another type switch
-					err := handleEventMessage(eventsAPIEvent, client)
+					err := handleEventMessage(eventsAPIEvent, client, socketClient)
 					if err != nil {
 						// Replace with actual err handeling
 						log.Fatal(err)

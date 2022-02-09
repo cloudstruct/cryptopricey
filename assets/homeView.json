@@ -1,0 +1,90 @@
+{
+	"type": "home",
+	"blocks": [
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": " "
+			},
+			"accessory": {
+				"type": "image",
+				"image_url": "https://cloudstruct.net/Icon-02.png",
+				"alt_text": "cute cat"
+			}
+		},
+		{
+			"type": "header",
+			"text": {
+				"type": "plain_text",
+				"text": "CryptoPricey - A CloudStruct OpenSource App",
+				"emoji": true
+			}
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "plain_text",
+					"text": "CryptoPricey aims to be the easiest and most relaible app for getting announcements ad-hoc and on a schedule for your favorite cryptocurrencies.",
+					"emoji": true
+				}
+			]
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "<http://github.com/cloudstruct/cryptopricey|We also accept feature requests at our GitHub>\n\n\n\n\n\n*Commands*\nThere are two slash commands available in any chat where @CryptoPricey has been invited."
+			}
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*1) /cryptoprice <Comma-separted list of crypto tickers>*\n\nexample:\n\t`/cryptoprice BTC,ETH,ADA`\n\tThis command returns a channel message with the spot price of the associated tickers."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "section",
+			"text": {
+				"type": "mrkdwn",
+				"text": "*2) /cryptoprice-config*\n\nexample:\n\t`/cryptoprice-config`\n\tThis command pops up a dialog for configuring scheduled announcement settings.  You only need to fill out the fields that you wish to change if you've already set them.  The pre-populated text is that of the current configuration for the channel which invoked the slash command."
+			}
+		},
+		{
+			"type": "divider"
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "image",
+					"image_url": "https://cloudstruct.net/Icon-02.png",
+					"alt_text": "cute cat"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*GitHub*: <https://github.com/cloudstruct|https://github.com/cloudstruct>"
+				}
+			]
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "image",
+					"image_url": "https://cloudstruct.net/Icon-02.png",
+					"alt_text": "cute cat"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Support*: <https://discord.gg/wzJQCrh8et|CloudStruct Discord>"
+				}
+			]
+		}
+	]
+}
