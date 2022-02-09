@@ -1,23 +1,27 @@
 package main
 
 import (
+	"embed"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/robfig/cron/v3"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
-	"log"
-	"net/http"
-	"strings"
-	"time"
+	"github.com/slack-go/slack/socketmode"
 )
 
 // handleEventMessage will take an event and handle it properly based on the type of event
-func handleEventMessage(event slackevents.EventsAPIEvent, client *slack.Client) error {
+func handleEventMessage(event slackevents.EventsAPIEvent, client *slack.Client, socketClient *socketmode.Client) error {
+	//{Type:events_api Data:{Token:0HD TeamID:T7B Type:event_callback APIAppID:A02F EnterpriseID: Data:0xca0 InnerEvent:{Type:app_home_opened Data:0xc00}} Request:0xc00}
+
 	switch event.Type {
 	// First we check if this is an CallbackEvent
 	case slackevents.CallbackEvent:
-
 		innerEvent := event.InnerEvent
 		// Yet Another Type switch on the actual Data to see if its an AppMentionEvent
 		switch ev := innerEvent.Data.(type) {
@@ -27,10 +31,41 @@ func handleEventMessage(event slackevents.EventsAPIEvent, client *slack.Client) 
 			if err != nil {
 				return err
 			}
+		case *slackevents.AppHomeOpenedEvent:
+			// The application has had its home page opened
+			err := handleAppHomeOpenedEvent(ev, client)
+			if err != nil {
+				return err
+			}
+
 		}
 	default:
 		return errors.New("unsupported event type")
 	}
+	return nil
+}
+
+//go:embed assets/*
+var appHomeAssets embed.FS
+
+func handleAppHomeOpenedEvent(event *slackevents.AppHomeOpenedEvent, client *slack.Client) error {
+	// create the view using block-kit
+	str, err := appHomeAssets.ReadFile("assets/homeView.json")
+	if err != nil {
+		log.Printf("Unable to read view `AppHomeView`: %v", err)
+	}
+	view := slack.HomeTabViewRequest{}
+	json.Unmarshal([]byte(str), &view)
+
+	// Publish the view
+	_, err = client.PublishView(event.User, view, "")
+
+	//Handle errors
+	if err != nil {
+		log.Printf("ERROR publishHomeTabView: %v", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -42,9 +77,6 @@ func handleAppMentionEvent(event *slackevents.AppMentionEvent, client *slack.Cli
 	if err != nil {
 		return err
 	}
-
-	// Capture what the user said to the bot and standarize
-	text := strings.ToLower(event.Text)
 
 	// Create the attachment and assigned based on the message
 	attachment := slack.Attachment{}
