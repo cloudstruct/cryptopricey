@@ -68,7 +68,7 @@
 				},
 				{
 					"type": "mrkdwn",
-					"text": "*GitHub*: <https://github.com/cloudstruct|https://github.com/cloudstruct>"
+					"text": "*GitHub*: <https://github.com/cloudstruct|https://github.com/cloudstruct> | <https://github.com/cloudstruct/cryptopricey|https://github.com/cloudstruct/cryptopricey>"
 				}
 			]
 		},
@@ -82,7 +82,21 @@
 				},
 				{
 					"type": "mrkdwn",
-					"text": "*Support*: <https://discord.gg/wzJQCrh8et|CloudStruct Discord>"
+					"text": "*Support*: <https://discord.gg/wzJQCrh8et|CloudStruct Discord> or email crypto@cloudstruct.net"
+				}
+			]
+		},
+		{
+			"type": "context",
+			"elements": [
+				{
+					"type": "image",
+					"image_url": "https://cloudstruct.net/Icon-02.png",
+					"alt_text": "cute cat"
+				},
+				{
+					"type": "mrkdwn",
+					"text": "*Privacy Policy*: <https://github.com/cloudstruct/cryptopricey/blob/main/POLICY.md|Read our Privacy Policy Here>"
 				}
 			]
 		}
