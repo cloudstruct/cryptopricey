@@ -1,0 +1,26 @@
+name: Hadolint and Dockerfile-tests
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  # Optional: allow read access to pull request. Use with `only-new-issues` option.
+  # pull-requests: read
+
+jobs:
+  lint-and-build-test:
+    name: lint and build test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Hadolint Dockerfile
+        uses: hadolint/hadolint-action@v1.6.0
+
+      - name: Validate basic JSON of assets
+        id: json-validate-jq
+        run: cat assets/*.json | jq .
+
+      - name: Build CryptoPricey Image
+        id: build-cryptopricey-image
+        run: docker build -t testbuild .
