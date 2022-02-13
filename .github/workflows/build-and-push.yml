@@ -5,9 +5,18 @@ on:
     branches:
       - 'main'
 
+<<<<<<< Updated upstream
 jobs:
   docker:
     runs-on: ubuntu-latest
+=======
+env:
+  
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    environment: build
+>>>>>>> Stashed changes
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
