@@ -14,20 +14,33 @@ RUN go mod download \
 COPY *.go ./
 COPY assets/* /app/assets/
 
-RUN go build -o /cryptopricey
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o /app/cryptopricey
 
 ## Deploy
 # hadolint ignore=DL3006
 FROM alpine:3
 
-RUN mkdir /app \
-  && chmod 0755 /app
+RUN apk add --no-cache musl-dev go
+
+# Configure Go
+ENV GOROOT /usr/lib/go
+ENV GOPATH /go
+ENV PATH /go/bin:$PATH
+
+RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin \
+  && mkdir -p /app/assets \
+  && chmod -R 0755 /app
 
 WORKDIR /app
 
-COPY --from=build /cryptopricey /app/cryptopricey
+COPY --from=build /app/cryptopricey /app/cryptopricey
+
+RUN addgroup -g 1000 -S cryptopricey && \
+    adduser -u 1000 -S cryptopricey -G cryptopricey
 
 RUN chmod 0755 /app/cryptopricey
+
+USER cryptopricey
 
 EXPOSE 8080
 
