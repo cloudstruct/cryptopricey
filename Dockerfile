@@ -20,12 +20,15 @@ RUN go build -o /cryptopricey
 # hadolint ignore=DL3006
 FROM alpine:3
 
-WORKDIR /
+RUN mkdir /app \
+  && chmod 0755 /app
 
-COPY --from=build /cryptopricey /cryptopricey
+WORKDIR /app
 
-RUN chmod 0755 /cryptopricey
+COPY --from=build /cryptopricey /app/cryptopricey
+
+RUN chmod 0755 /app/cryptopricey
 
 EXPOSE 8080
 
-CMD ["/cryptopricey"]
+CMD ["/app/cryptopricey"]
