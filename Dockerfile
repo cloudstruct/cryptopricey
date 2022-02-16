@@ -23,7 +23,8 @@ FROM debian:11-slim
 WORKDIR /
 
 RUN mkdir /app \
-  && chmod 0755 /app
+  && chmod 0755 /app \
+  && chown nobody -R /app
 
 COPY --from=build /cryptopricey /app/cryptopricey
 
@@ -31,6 +32,6 @@ RUN chmod 0755 /app/cryptopricey
 
 EXPOSE 8080
 
-USER nonroot:nonroot
+USER nobody
 
 ENTRYPOINT ["/app/cryptopricey"]
