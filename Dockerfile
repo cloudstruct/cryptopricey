@@ -18,20 +18,14 @@ RUN go build -o /cryptopricey
 
 ## Deploy
 # hadolint ignore=DL3006
-FROM debian:11-slim
+FROM alpine:3
 
 WORKDIR /
 
-RUN mkdir /app \
-  && chmod 0755 /app \
-  && chown nobody -R /app
+COPY --from=build /cryptopricey /cryptopricey
 
-COPY --from=build /cryptopricey /app/cryptopricey
-
-RUN chmod 0755 /app/cryptopricey
+RUN chmod 0755 /cryptopricey
 
 EXPOSE 8080
 
-USER nobody
-
-ENTRYPOINT ["/app/cryptopricey"]
+CMD ["/cryptopricey"]
