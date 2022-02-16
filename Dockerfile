@@ -18,14 +18,19 @@ RUN go build -o /cryptopricey
 
 ## Deploy
 # hadolint ignore=DL3006
-FROM gcr.io/distroless/base-debian11
+FROM debian:11-slim
 
 WORKDIR /
 
-COPY --from=build /cryptopricey /cryptopricey
+RUN mkdir /app \
+  && chmod 0755 /app
+
+COPY --from=build /cryptopricey /app/cryptopricey
+
+RUN chmod 0755 /app/cryptopricey
 
 EXPOSE 8080
 
 USER nonroot:nonroot
 
-ENTRYPOINT ["/cryptopricey"]
+ENTRYPOINT ["/app/cryptopricey"]
