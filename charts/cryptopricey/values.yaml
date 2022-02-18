@@ -22,3 +22,5 @@ serviceAccount:
   name: "cryptopricey"
   annotations: {}
   labels: {}
+
+envVars: []
