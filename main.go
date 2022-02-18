@@ -31,15 +31,28 @@ func httpClient() *http.Client {
 }
 
 func main() {
-
 	// Load Env variables from .dot file
 	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
 
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	appToken := os.Getenv("SLACK_APP_TOKEN")
+
+	// Allow helm chart tests to pass in a valid way
+	testMode := os.Getenv("TEST_MODE")
+	if len(testMode) > 0 {
+		time.Sleep(120 * time.Second)
+	}
+
+	if len(token) < 1 {
+		log.Fatal("Error loading Auth Token.")
+	}
+
+	if len(appToken) < 1 {
+		log.Fatal("Error loading App Token.")
+	}
 
 	// Load HTTP Client
 	httpClient := httpClient()
