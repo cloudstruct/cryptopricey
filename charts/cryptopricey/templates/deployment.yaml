@@ -45,8 +45,8 @@ spec:
   {{- if .Values.cryptopricey.secret.name }}
           volumeMounts:
             - name: cryptopricey-config-secret
-              mountPath: "/app"
-              readOnly: true
+              mountPath: "/.env"
+              subPath: ".env"
   {{- end }}
           env:
   {{- range .Values.envVars }}
