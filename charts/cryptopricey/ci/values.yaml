@@ -1,0 +1,12 @@
+envVars:
+  - name: "TEST_MODE"
+    value: "True"
+
+cryptopricey:
+  secret:
+    create: true
+    name: "mysecret"
+    contents: |
+      slackAuthToken: "xoxb-229292929292-2929292929292-aYg4i2ajev35JUERvytFKhp5"
+      slackAppToken: "xapp-1-A0A0A0A0A0A-2929292929292-aYg4i2ajev35JUERvytFKhp5aYg4i2ajev35JUERvytFKhp56fb5252525252525"
+      dataDir: "/tmp"

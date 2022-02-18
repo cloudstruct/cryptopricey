@@ -1,0 +1,24 @@
+# This is the default values file for cryptopricey
+deployment:
+  replicas: 1
+
+cryptopricey:
+  secret:
+    create: false
+    # name: ""
+    # The following are only used if create=true
+    # contents: |
+    #   slackAuthToken: "xoxb-229292929292-2929292929292-aYg4i2ajev35JUERvytFKhp5"
+    #   slackAppToken: "xapp-1-A0A0A0A0A0A-2929292929292-aYg4i2ajev35JUERvytFKhp5aYg4i2ajev35JUERvytFKhp56fb5252525252525"
+    #   dataDir: "/tmp"
+
+image:
+  repository: "cloudstruct/cryptopricey"
+  tag: "1.0.9"
+  pullPolicy: "IfNotPresent"
+
+serviceAccount:
+  create: "true"
+  name: "cryptopricey"
+  annotations: {}
+  labels: {}

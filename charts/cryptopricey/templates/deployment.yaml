@@ -1,0 +1,59 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cryptopricey
+{{- with .Values.labels }}
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with .Values.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+  name: cryptopricey
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      app: cryptopricey
+  template:
+    metadata:
+      labels:
+        app: cryptopricey
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+  {{- if .Values.cryptopricey.secret.name }}
+      volumes:
+        - name: cryptopricey-config-secret
+          secret:
+            secretName: {{ .Values.cryptopricey.secret.name }}
+  {{- end }}
+      containers:
+        - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe:
+  {{ toYaml .Values.livenessProbe | indent 10 }}
+          {{- end }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe:
+  {{ toYaml .Values.readinessProbe | indent 10 }}
+          {{- end }}
+          name: cryptopricey
+  {{- if .Values.cryptopricey.secret.name }}
+          volumeMounts:
+            - name: cryptopricey-config-secret
+              mountPath: "/app"
+              readOnly: true
+  {{- end }}
+          env:
+  {{- range .Values.envVars }}
+            - name: "{{ .name }}"
+              value: "{{ .value }}"
+  {{- end }}
+  {{- if .Values.image.pullSecret }}
+          imagePullSecrets:
+            - name: {{ .Values.image.pullSecret }}
+  {{- end }}
