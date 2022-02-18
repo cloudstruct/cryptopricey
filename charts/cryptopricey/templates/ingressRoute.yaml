@@ -1,0 +1,26 @@
+{{- if .Values.ingressRoute.create }}
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+{{- range $key, $value := .Values.ingressRoute.annotations }}
+    {{ $key }}: {{ $value | quote }}
+{{- end }}
+  name: {{ .Values.ingressRoute.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  entryPoints:
+  - websecure
+  routes:
+  - kind: Rule
+    match: Host(`{{ .Values.ingressRoute.host }}`)
+    priority: 11
+    services:
+      - name: {{ .Values.service.name }}
+        namespace: {{ .Release.Namespace }}
+        port: {{ .Values.service.port }}
+{{- if .Values.ingressRoute.tls.secretName }}
+  tls:
+    secretName: {{ .Values.ingressRoute.tls.secretName }}
+{{- end }}
+{{- end }}

@@ -17,8 +17,23 @@ image:
   tag: "1.0.9"
   pullPolicy: "IfNotPresent"
 
+ingressRoute: {}
+  # name: cryptopricey
+  # annotations:
+  #   external-dns: true
+  # tls:
+  #   secretName: ""
+  # host: my.oauth.com
+
+service:
+  create: true
+  name: cryptopricey
+  port: 8080
+  portName: http
+  type: ClusterIP
+
 serviceAccount:
-  create: "true"
+  create: true
   name: "cryptopricey"
   annotations: {}
   labels: {}

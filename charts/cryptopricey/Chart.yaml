@@ -1,7 +1,7 @@
 apiVersion: v2
 name: CryptoPricey
 description: Deploys the cryptopricey slack app
-version: 0.0.2
+version: 0.0.3
 appVersion: v1.0.0
 maintainers:
   - name: jwitko

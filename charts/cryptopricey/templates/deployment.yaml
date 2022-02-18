@@ -42,6 +42,10 @@ spec:
   {{ toYaml .Values.readinessProbe | indent 10 }}
           {{- end }}
           name: cryptopricey
+          ports:
+            - name: {{ .Values.service.portName }}
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
   {{- if .Values.cryptopricey.secret.name }}
           volumeMounts:
             - name: cryptopricey-config-secret
