@@ -25,9 +25,8 @@ WORKDIR /
 COPY --from=build /build/cryptopricey /cryptopricey
 
 RUN addgroup -g 1000 -S cryptopricey && \
-    adduser -u 1000 -S cryptopricey -G cryptopricey
-
-RUN chmod 0755 /cryptopricey
+    adduser -u 1000 -S cryptopricey -G cryptopricey && \
+    chmod 0755 /cryptopricey
 
 USER cryptopricey
 
