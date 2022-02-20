@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -43,7 +44,7 @@ func main() {
 	// Allow helm chart tests to pass in a valid way
 	testMode := os.Getenv("TEST_MODE")
 	if len(testMode) > 0 {
-		time.Sleep(120 * time.Second)
+		time.Sleep(1200 * time.Second)
 	}
 
 	if len(token) < 1 {
@@ -53,6 +54,22 @@ func main() {
 	if len(appToken) < 1 {
 		log.Fatal("Error loading App Token.")
 	}
+
+	clientID := os.Getenv("SLACK_CLIENT_ID")
+	clientSecret := os.Getenv("SLACK_CLIENT_SECRET")
+
+	if clientID == "" || clientSecret == "" {
+		fmt.Println("You must specify the client ID and client secret from https://api.slack.com/applications")
+		os.Exit(1)
+	}
+
+	go func() {
+		http.HandleFunc("/add", addToSlack)
+		http.HandleFunc("/auth", auth)
+		http.HandleFunc("/", home)
+		log.Fatal(http.ListenAndServe(":8080", nil))
+	}()
+	log.Println("Listening on port 8080 for OAuth requests")
 
 	// Load HTTP Client
 	httpClient := httpClient()
@@ -69,6 +86,7 @@ func main() {
 		socketmode.OptionLog(log.New(os.Stdout, "socketmode: ", log.Lshortfile|log.LstdFlags)),
 	)
 
+	// Cron goroutines for handling scheduled announcements in parallel
 	mainCron := cron.New(cron.WithLocation(time.UTC))
 	mainCron, err = rebuildCron(mainCron, client, httpClient)
 	if err != nil {
